@@ -60,10 +60,10 @@ async function gptlogic(message, prompt) {
     return error.message;
   }
 };
-
-app.get('/', (req, res) => {
-    res.sendFile('/public/index.html')
-})
+// Endpoint untuk html
+app.get('', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+});
 
 // Endpoint untuk endpoint
 app.get('/cek', async (req, res) => {
