@@ -3,6 +3,9 @@
 const express = require('express');
 const app = express();
 const axios = require('axios');
+const expressLayout = require('express-ejs-layouts');
+const cookieParser = require('cookie-parser');
+
 const PORT = process.env.PORT || 3000;
 
 let domen = "https://apii.maulanaa.xyz"
@@ -18,6 +21,13 @@ app.use((req, res, next) => {
   console.log(`Request ke-${requestCount}: ${req.method} ${req.url}`);
   next();
 });
+
+app.set('view engine', 'ejs');
+app.use(expressLayout);
+app.use(express.static('public'));
+app.use(cookieParser());
+
+
 
 async function gptlogic(message, prompt) {
   try {
