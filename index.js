@@ -61,11 +61,8 @@ async function gptlogic(message, prompt) {
 };
 
 app.get('/', (req, res) => {
-  res.render('index', {
-    layout: false
-  });
-});
-
+    res.sendFile(__path + '/public/index.ejs')
+})
 
 // Endpoint untuk endpoint
 app.get('/cek', async (req, res) => {
