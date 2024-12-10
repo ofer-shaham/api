@@ -22,7 +22,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.set('view engine', 'html');
+app.set('view engine', 'ejs');
 app.use(expressLayout);
 app.use(express.static('public'));
 app.use(cookieParser());
