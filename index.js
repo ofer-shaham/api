@@ -3,6 +3,7 @@
 const express = require('express');
 const app = express();
 const axios = require('axios');
+const path = require('path');
 const expressLayout = require('express-ejs-layouts');
 const cookieParser = require('cookie-parser');
 
