@@ -22,7 +22,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.set('view engine', 'ejs');
+app.set('view engine', 'html');
 app.use(expressLayout);
 app.use(express.static('public'));
 app.use(cookieParser());
@@ -60,8 +60,15 @@ async function gptlogic(message, prompt) {
   }
 };
 
+app.get('/', (req, res) => {
+  res.render('index', {
+    layout: false
+  });
+});
+
+
 // Endpoint untuk endpoint
-app.get('/', async (req, res) => {
+app.get('/cek', async (req, res) => {
   try {
     var list_fitur = [
       domen + "/ai/chat?q=halo",
