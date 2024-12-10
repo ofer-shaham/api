@@ -22,7 +22,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.set('view engine', 'ejs');
+app.set('view engine', 'html');
 app.use(expressLayout);
 app.use(express.static('public'));
 app.use(cookieParser());
@@ -61,7 +61,7 @@ async function gptlogic(message, prompt) {
 };
 
 app.get('/', (req, res) => {
-    res.sendFile(__path + '/public/index.ejs')
+    res.sendFile(__path + '/public/index.html')
 })
 
 // Endpoint untuk endpoint
