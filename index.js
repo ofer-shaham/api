@@ -6,11 +6,13 @@ const expressLayout = require('express-ejs-layouts');
 const cookieParser = require('cookie-parser');
 const PORT = process.env.PORT || 3000;
 const { gptlogic, loadConversationHistory, saveConversationHistory } = require('./lib/function')
+const cors = require('cors');
 
 // Konfigurasi API keys
 const config = {
   ApiGroq: ["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", "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"]
 };
+app.use(cors());
 
 // Middleware untuk mencatat request
 let requestCount = 0;
