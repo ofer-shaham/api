@@ -1,39 +1,13 @@
-const express = require('express');
-const app = express();
-const axios = require('axios');
-const path = require('path');
-const expressLayout = require('express-ejs-layouts');
-const cookieParser = require('cookie-parser');
-const PORT = process.env.PORT || 3000;
-const { gptlogic, loadConversationHistory, saveConversationHistory } = require('./lib/function');
-const cors = require('cors');
-const swaggerJsDoc = require('swagger-jsdoc');
-const swaggerUi = require('swagger-ui-express');
 
-// Configure API keys
-const config = {
-  ApiGroq: ["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", "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"]
-};
 
-app.use(cors());
-app.use(express.json());
-
-// Request counter middleware
-let requestCount = 0;
-app.use((req, res, next) => {
-  requestCount++;
-  console.log(`Request #${requestCount}: ${req.method} ${req.url}`);
-  next();
-});
-
-// Swagger setup
-const swaggerOptions = {
+// Swagger configuration
+export const swaggerOptions = {
   swaggerDefinition: {
     openapi: "3.0.0",
     info: {
       title: "AI Service API",
       version: "1.0.0",
-      description: "API documentation for AI services",
+      description: "API documentation for various AI services including Groq, GPTWeb, Gemini, and custom chat endpoints",
       contact: {
         name: "Lana X",
         url: "http://example.com",
@@ -42,7 +16,7 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: `http://0.0.0.0:${PORT}`,
+        url: "http://localhost:3000",
         description: "Development server"
       },
     ],
@@ -51,48 +25,52 @@ const swaggerOptions = {
         Error: {
           type: "object",
           properties: {
-            status: { type: "integer", example: 500 },
-            creator: { type: "string", example: "Lana X" },
-            error: { type: "string" }
+            status: {
+              type: "integer",
+              example: 500
+            },
+            creator: {
+              type: "string",
+              example: "Lana X"
+            },
+            error: {
+              type: "string",
+              example: "Internal server error"
+            }
           }
         },
         SuccessResponse: {
           type: "object",
           properties: {
-            status: { type: "integer", example: 200 },
-            creator: { type: "string", example: "Lana X" },
-            result: { type: "object" }
+            status: {
+              type: "integer",
+              example: 200
+            },
+            creator: {
+              type: "string",
+              example: "Lana X"
+            },
+            result: {
+              type: "object"
+            }
           }
         }
       }
-    }
+    },
+    tags: [
+      {
+        name: "AI Services",
+        description: "AI-related endpoints"
+      },
+      {
+        name: "System",
+        description: "System-related endpoints"
+      }
+    ]
   },
   apis: ["./index.js"],
 };
 
-const swaggerDocs = swaggerJsDoc(swaggerOptions);
-app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
-
-// Helper functions
-const handleError = (res, message) => {
-  res.status(500).json({ status: 500, creator: "Lana X", error: message });
-};
-
-const validateParams = (req, res, params) => {
-  for (let param of params) {
-    if (!req[req.method === 'GET' ? 'query' : 'body'][param]) {
-      res.status(400).json({
-        status: 400,
-        creator: "Lana X",
-        message: `Please provide parameter ${param}`
-      });
-      return false;
-    }
-  }
-  return true;
-};
-
-// Routes
 /**
  * @swagger
  * /request-count:
@@ -359,106 +337,3 @@ const validateParams = (req, res, params) => {
  *             schema:
  *               $ref: '#/components/schemas/SuccessResponse'
  */
-
-app.get('/request-count', (req, res) => {
-  res.json({ creator: "Lana Api", count: requestCount });
-});
-
-// AI routes handler
-const handleAIRoute = async (type, req, res) => {
-  const input = req.method === 'GET' ? req.query : req.body;
-
-  try {
-    let result;
-    switch(type) {
-      case 'groq':
-        if (!validateParams(req, res, ['q', 'userId'])) return;
-        result = await handleGroqRequest(input.q, input.userId);
-        break;
-      case 'gptweb':
-        if (!validateParams(req, res, ['q'])) return;
-        const gptwebResponse = await axios.get(`https://deliriussapi-oficial.vercel.app/ia/gptweb?text=+${input.q}`);
-        result = gptwebResponse.data.data;
-        break;
-      case 'gemini':
-        if (!validateParams(req, res, ['q'])) return;
-        const geminiResponse = await axios.get(`https://deliriussapi-oficial.vercel.app/ia/gemini?query=+${input.q}`);
-        result = geminiResponse.data.message;
-        break;
-      case 'logic':
-        if (!validateParams(req, res, ['q', 'logic'])) return;
-        result = await gptlogic(input.q, input.logic);
-        break;
-      case 'chat':
-        if (!validateParams(req, res, ['q'])) return;
-        const chatResponse = await axios({
-          method: req.method,
-          url: "https://hercai.onrender.com/v3/hercai",
-          [req.method === 'GET' ? 'params' : 'data']: { question: input.q }
-        });
-        result = chatResponse.data;
-        break;
-    }
-
-    res.json({
-      status: 200,
-      creator: "Lana X",
-      result
-    });
-  } catch (error) {
-    handleError(res, error.message);
-  }
-};
-
-// Handle Groq requests
-async function handleGroqRequest(q, userId) {
-  const model = "llama-3.1-70b-versatile";
-  let conversationHistories = loadConversationHistory();
-  const MAX_MESSAGES = 100;
-  const apiKey = config.ApiGroq[Math.floor(Math.random() * config.ApiGroq.length)];
-
-  if (!conversationHistories[userId]) {
-    conversationHistories[userId] = [];
-  }
-
-  if (conversationHistories[userId].length >= MAX_MESSAGES) {
-    conversationHistories[userId] = [];
-  }
-
-  conversationHistories[userId].push({ role: "user", content: q });
-
-  const response = await axios.post(
-    "https://api.groq.com/openai/v1/chat/completions",
-    {
-      model,
-      messages: conversationHistories[userId],
-    },
-    {
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      }
-    }
-  );
-
-  const replyMessage = response.data.choices[0].message.content;
-  conversationHistories[userId].push({ role: "assistant", content: replyMessage });
-  saveConversationHistory(conversationHistories);
-
-  return replyMessage;
-}
-
-// Route definitions
-for (const type of ['groq', 'gptweb', 'gemini', 'logic', 'chat']) {
-  app.get(`/ai/${type}`, (req, res) => handleAIRoute(type, req, res));
-  app.post(`/ai/${type}`, (req, res) => handleAIRoute(type, req, res));
-}
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
-});
-
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-});
